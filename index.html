@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Fean - Cookie Catching Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e1e28 0%, #2d2d3d 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #00ffff;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #0088ff;
+            margin-bottom: 10px;
+        }
+
+        .game-wrapper {
+            position: relative;
+            background: #1e1e28;
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 20px #00ffff, inset 0 0 20px rgba(0, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #0a0a14, #1e1e28);
+        }
+
+        .ui {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: rgba(0, 20, 40, 0.8);
+            padding: 15px 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            min-width: 100%;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .stat-value {
+            color: #00ffff;
+            font-size: 1.8em;
+            display: block;
+        }
+
+        #comboDisplay {
+            animation: pulse 0.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { color: #ffff00; text-shadow: 0 0 10px #ffff00; }
+            50% { color: #ff8800; text-shadow: 0 0 20px #ff8800; }
+        }
+
+        .instructions {
+            color: #00ff00;
+            font-size: 0.9em;
+            text-align: center;
+            max-width: 1200px;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .instructions strong {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        #pauseOverlay, #gameOverOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            border-radius: 10px;
+        }
+
+        #pauseOverlay.active, #gameOverOverlay.active {
+            display: flex;
+        }
+
+        .overlay-text {
+            color: #00ffff;
+            font-size: 3em;
+            font-weight: bold;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 30px;
+        }
+
+        .overlay-subtitle {
+            color: #00ff00;
+            font-size: 1.2em;
+            text-shadow: 0 0 10px #00ff00;
+            margin-bottom: 20px;
+        }
+
+        .overlay-stats {
+            color: #ffff00;
+            font-size: 1.5em;
+            text-shadow: 0 0 10px #ffff00;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 1400px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .stat {
+                font-size: 1em;
+            }
+
+            .stat-value {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🍪 COOKIE FEAN 🍪</h1>
+        
+        <div class="game-wrapper">
+            <canvas id="gameCanvas" width="1200" height="800"></canvas>
+            
+            <div id="pauseOverlay">
+                <div class="overlay-text">PAUSED</div>
+                <div class="overlay-subtitle">Press SPACE to continue</div>
+            </div>
+            
+            <div id="gameOverOverlay">
+                <div class="overlay-text">GAME OVER</div>
+                <div class="overlay-stats">Final Score: <span id="finalScore">0</span></div>
+                <div class="overlay-stats">Level Reached: <span id="finalLevel">1</span></div>
+                <div class="overlay-subtitle">Press SPACE to restart</div>
+            </div>
+        </div>
+
+        <div class="ui">
+            <div class="stat">
+                <span class="stat-label">SCORE</span>
+                <span class="stat-value" id="score">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">LIVES</span>
+                <span class="stat-value" id="lives">3</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">LEVEL</span>
+                <span class="stat-value" id="level">1</span>
+            </div>
+            <div class="stat" id="comboDisplay" style="display: none;">
+                <span class="stat-label">COMBO</span>
+                <span class="stat-value" id="combo">0</span>x
+            </div>
+        </div>
+
+        <div class="instructions">
+            <strong>Controls:</strong> Arrow Keys or A/D to move | <strong>SPACE</strong> to pause | <strong>ESC</strong> to quit<br>
+            Catch falling cookies to earn points! Build combos for bonus points!
+        </div>
+    </div>
+
+    <!-- Load game scripts in order -->
+    <script src="js/constants.js"></script>
+    <script src="js/entities.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
