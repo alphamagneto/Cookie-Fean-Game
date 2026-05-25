@@ -18,6 +18,7 @@ const COOKIE_MAX_ON_SCREEN = 30;
 
 // Powerup Constants
 const POWERUP_SIZE = 40;
+const POWERUP_SPEED_BASE = 3; // Added dedicated speed constant for powerups
 const POWERUP_SPAWN_RATE = 0.005; // Less frequent than cookies
 const POWERUP_POINTS = 50;
 

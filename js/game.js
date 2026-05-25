@@ -13,6 +13,9 @@ class CookieFeanGame {
         this.combo = 0;
         this.comboTimeout = null;
         this.totalCatches = 0; // Track total catches for audio milestones
+        this.lastLevel = INITIAL_LEVEL; // Track previous level for level-up detection
+        this.shieldActive = false; // Track if powerup shield is active
+        this.shieldTimeout = null;
 
         // Entities
         this.player = new Player(PLAYER_START_X, PLAYER_START_Y);
@@ -46,10 +49,14 @@ class CookieFeanGame {
 
     playSound(soundKey) {
         if (this.audioCache[soundKey]) {
-            const audio = this.audioCache[soundKey].cloneNode();
-            audio.play().catch(err => {
-                console.log(`Could not play sound: ${soundKey}`, err);
-            });
+            try {
+                const audio = this.audioCache[soundKey].cloneNode();
+                audio.play().catch(err => {
+                    console.log(`Could not play sound: ${soundKey}`, err);
+                });
+            } catch (err) {
+                console.log(`Error cloning audio for ${soundKey}:`, err);
+            }
         }
     }
 
@@ -159,6 +166,11 @@ class CookieFeanGame {
         const newLevel = Math.floor(this.score / SCORE_PER_LEVEL) + 1;
         if (newLevel !== this.level) {
             this.level = newLevel;
+            // Play level-up sound when level increases
+            if (this.level > this.lastLevel) {
+                this.playSound('LEVEL_UP');
+                this.lastLevel = this.level;
+            }
         }
 
         // Check game over
@@ -185,11 +197,12 @@ class CookieFeanGame {
         // Play catch sound
         this.playSound('CATCH');
 
-        // Check audio milestones
-        if (this.totalCatches % FEAN_LAUGH_MILESTONE === 0) {
+        // Check audio milestones (fixed off-by-one error)
+        // Using (totalCatches - 1) to account for 0-based counter
+        if ((this.totalCatches - 1) % FEAN_LAUGH_MILESTONE === 0 && this.totalCatches > 0) {
             this.playSound('FEAN_LAUGH');
         }
-        if (this.totalCatches % OOH_COOKIES_MILESTONE === 0) {
+        if ((this.totalCatches - 1) % OOH_COOKIES_MILESTONE === 0 && this.totalCatches > 0) {
             this.playSound('OOH_COOKIES');
         }
 
@@ -212,13 +225,37 @@ class CookieFeanGame {
         // Play powerup sound
         this.playSound('POWERUP');
 
-        // Bonus effect: add extra life or bonus combo
+        // Bonus effect: activate shield for 3 seconds
+        this.activateShield();
+        
+        // Also add combo boost
         this.combo += 2;
         this.updateComboDisplay();
     }
 
+    activateShield() {
+        this.shieldActive = true;
+        
+        // Clear existing shield timeout if any
+        if (this.shieldTimeout) {
+            clearTimeout(this.shieldTimeout);
+        }
+        
+        // Shield lasts for 3 seconds
+        this.shieldTimeout = setTimeout(() => {
+            this.shieldActive = false;
+        }, 3000);
+    }
+
     missedCookie() {
-        this.lives--;
+        // If shield is active, don't lose a life
+        if (this.shieldActive) {
+            this.shieldActive = false;
+            console.log('Shield protected you!');
+        } else {
+            this.lives--;
+        }
+        
         this.combo = 0;
         this.updateComboDisplay();
 
@@ -262,6 +299,27 @@ class CookieFeanGame {
 
         // Draw player (on top)
         this.player.draw(this.ctx);
+
+        // Draw shield effect if active
+        if (this.shieldActive) {
+            this.drawShield();
+        }
+    }
+
+    drawShield() {
+        this.ctx.save();
+        this.ctx.strokeStyle = 'rgba(0, 255, 0, 0.6)';
+        this.ctx.lineWidth = 3;
+        this.ctx.beginPath();
+        this.ctx.arc(
+            this.player.x + this.player.width / 2,
+            this.player.y + this.player.height / 2,
+            Math.max(this.player.width, this.player.height) / 2 + 10,
+            0,
+            Math.PI * 2
+        );
+        this.ctx.stroke();
+        this.ctx.restore();
     }
 
     updateUI() {
@@ -283,15 +341,30 @@ class CookieFeanGame {
     }
 
     restart() {
+        // Cancel any pending animation frames (FIX for memory leak)
+        if (this.gameLoopId) {
+            cancelAnimationFrame(this.gameLoopId);
+        }
+
         // Reset game state
         this.state = GAME_STATES.PLAYING;
         this.score = INITIAL_SCORE;
         this.lives = INITIAL_LIVES;
         this.level = INITIAL_LEVEL;
+        this.lastLevel = INITIAL_LEVEL;
         this.combo = 0;
         this.totalCatches = 0;
+        this.shieldActive = false;
         this.cookies = [];
         this.powerups = [];
+
+        // Clear timeouts
+        if (this.comboTimeout) {
+            clearTimeout(this.comboTimeout);
+        }
+        if (this.shieldTimeout) {
+            clearTimeout(this.shieldTimeout);
+        }
 
         // Reset player
         this.player = new Player(PLAYER_START_X, PLAYER_START_Y);

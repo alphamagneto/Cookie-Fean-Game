@@ -162,7 +162,8 @@ class Powerup {
         this.x = x;
         this.y = y;
         this.size = POWERUP_SIZE;
-        this.speed = COOKIE_SPEED_BASE * speedMultiplier;
+        // Use dedicated powerup speed constant (FIXED: was using COOKIE_SPEED_BASE)
+        this.speed = POWERUP_SPEED_BASE * speedMultiplier;
         this.rotation = Math.random() * Math.PI * 2;
         this.rotationSpeed = (Math.random() - 0.5) * 0.15;
         this.glow = 0;
