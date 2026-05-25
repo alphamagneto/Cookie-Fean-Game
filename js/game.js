@@ -62,20 +62,20 @@ class CookieFeanGame {
     handleKeyDown(e) {
         this.keys[e.key] = true;
 
-        // Pause toggle
+        // Handle Space key based on game state
         if (e.key === ' ') {
             e.preventDefault();
-            this.togglePause();
+            
+            if (this.state === GAME_STATES.GAME_OVER) {
+                this.restart();
+            } else if (this.state === GAME_STATES.PLAYING || this.state === GAME_STATES.PAUSED) {
+                this.togglePause();
+            }
         }
 
         // Quit game
         if (e.key === 'Escape') {
             this.endGame();
-        }
-
-        // Game Over restart
-        if (e.key === ' ' && this.state === GAME_STATES.GAME_OVER) {
-            this.restart();
         }
     }
 
