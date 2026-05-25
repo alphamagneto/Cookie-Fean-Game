@@ -75,8 +75,8 @@ const AUDIO_FILES = {
 
 // Image Files
 const IMAGE_FILES = {
-    PLAYER: 'images/player.png',
-    COOKIE: 'images/cookie.png',
-    POWERUP: 'images/cookie_powerup.jpg',
-    BACKGROUND: 'images/background.png'
+    PLAYER: 'images/player.jpg',
+    COOKIE: 'images/cookie.jpg',
+    POWERUP: 'images/powerup.jpg',
+    BACKGROUND: 'images/background.jpg'
 };
